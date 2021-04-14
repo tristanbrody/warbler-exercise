@@ -1,12 +1,15 @@
 from flask import g, flash, redirect, url_for
 
-def login_required(some_var):
-    def additional_layer(func):
+def login_required(context):
+    def login_wrapper(func):
         def wrap(*args, **kwargs):
             if g.user:
                 return func(*args, **kwargs)
-            else:
-                flash("Please login first")
+            elif context == 'logout':
+                flash("You aren't currently logged in")
+                return redirect(url_for('login'))
+            elif context == 'user_details':
+                flash("Access unauthorized.", "danger")
                 return redirect(url_for('login'))
         return wrap
-    return additional_layer
+    return login_wrapper
