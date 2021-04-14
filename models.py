@@ -125,7 +125,7 @@ class User(db.Model):
         return len(found_user_list) == 1
 
     def is_following(self, other_user):
-        """Is this user following `other_user`?"""
+        """Is this user following `other_use`?"""
 
         found_user_list = [user for user in self.following if user == other_user]
         return len(found_user_list) == 1
@@ -145,10 +145,8 @@ class User(db.Model):
             password=hashed_pwd,
             image_url=image_url,
         )
-        try: 
-            db.session.add(user)
-        except: 
-            return None
+
+        db.session.add(user)
         return user
 
     @classmethod
