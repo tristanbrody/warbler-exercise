@@ -1,14 +1,15 @@
 import os
 
-from flask import Flask, render_template, request, flash, redirect, session, g, url_for
+from flask import Flask, render_template, request, flash, redirect, session, g, url_for, template_rendered
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 from decorators import login_required
+from contextlib import contextmanager
 
 from forms import UserAddForm, LoginForm, MessageForm, ProfileEditForm
-from models import db, connect_db, User, Message, Likes
+from models import DirectMessage, DirectMessageExchange, db, connect_db, User, Message, Likes
 import pdb
 
 CURR_USER_KEY = "curr_user"
@@ -24,7 +25,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
-# toolbar = DebugToolbarExtension(app)
+toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
 
@@ -287,7 +288,7 @@ def messages_destroy(message_id):
     if msg.user_id != g.user.id:
         flash("Access unauthorized")
         return redirect('/')
-        
+
     db.session.delete(msg)
     db.session.commit()
 
@@ -319,8 +320,18 @@ def toggle_like(message_id):
 @login_required(context='user_details')
 def send_direct_message():
     """Send a direct message to a specific user"""
-    send_to = request.form.get('send_to')
+    send_to_id = request.form.get('send-to')
+    send_to = User.query.get(send_to_id)
     form = MessageForm()
+    # check if form completed or if we're just rendering template
+    if form.validate_on_submit():
+        #insert DirectMessage and DirectMessageExchange records
+        new_direct_message = DirectMessage(text=form.text.data)
+        db.session.add(new_direct_message)
+        db.session.commit()
+        new_direct_message_exchange = DirectMessageExchange(sender_id=g.user.id, sent_id=send_to.id, message=new_direct_message.id)
+        db.session.add(new_direct_message_exchange)
+        db.session.commit()
     return render_template('/messages/new_direct_message.html', send_to=send_to, form=form)
 
 ##############################################################################
@@ -365,3 +376,14 @@ def add_header(req):
     req.headers["Expires"] = "0"
     req.headers['Cache-Control'] = 'public, max-age=0'
     return req
+
+@contextmanager
+def captured_templates(app):
+    recorded = []
+    def record(sender, template, context, **extra):
+        recorded.append((template, context))
+    template_rendered.connect(record, app)
+    try:
+        yield recorded
+    finally:
+        template_rendered.disconnect(record, app)

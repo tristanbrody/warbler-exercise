@@ -9,7 +9,7 @@ from models import db, User, Message, Follows
 
 os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
 
-from app import app, CURR_USER_KEY
+from app import app, CURR_USER_KEY, captured_templates
 app.config['WTF_CSRF_ENABLED'] = False
 app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
 
@@ -55,20 +55,23 @@ class UserViewTestCase(TestCase):
     
     def testSuccessfulLogin(self):
         """test for successful login"""
-        data = {
-            "username": "new_user",
-            "password": "some_password",
-            "email": "myemail@yahoo.com"
-        }
-        # first need to sign up
-        self.client.post('/signup', data=data, follow_redirects=True)
-        user = User.query.filter_by(username='new_user')
-        response = self.client.post('/login', data={
-            'username': 'new_user',
-            'password': 'some_password'
-        }, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Hello, new_user', response.data)
+        with captured_templates(app) as templates:
+            data = {
+                "username": "new_user",
+                "password": "some_password",
+                "email": "myemail@yahoo.com"
+            }
+            # first need to sign up
+            self.client.post('/signup', data=data, follow_redirects=True)
+            user = User.query.filter_by(username='new_user').first()
+            response = self.client.post('/login', data={
+                'username': 'new_user',
+                'password': 'some_password'
+            }, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            template, context = templates[0]
+            assert template.name == 'home.html'
+
 
     def testFailedLogin(self):
         """test for failed login"""

@@ -6,16 +6,11 @@
         <form method="POST">
             {{ form.csrf_token }}
             <div>
-                {% if form.text.errors %}
-                {% for error in form.text.errors %}
-                <span class="text-danger">
-                    {{ error }}
-                </span>
-                {% endfor %}
-                {% endif %}
-                {{ form.text(placeholder="What's happening?", class="form-control", rows="3") }}
+                {{ form.text(placeholder="Start a conversation", class="form-control",
+                rows="3") }}
             </div>
-            <button class="btn btn-outline-success btn-block">Add my message!</button>
+            <input type="text" style="display:none" name="send-to" value={{send_to.id}}>
+            <button class="btn btn-outline-success btn-block">Message {{send_to.username}}</button>
         </form>
     </div>
 </div>

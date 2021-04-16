@@ -198,6 +198,29 @@ class Message(db.Model):
     )
 
     user = db.relationship('User')
+class DirectMessageExchange(db.Model):
+    """Track sender and sent-to info per direct message"""
+
+    __tablename__ = 'direct_message_exchanges'
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    message = db.Column(db.Integer, db.ForeignKey('direct_messages.id', ondelete='CASCADE'), nullable=False)
+
+    sender_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        nullable=False,
+    )
+
+    sent_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        nullable=False
+    )   
 class DirectMessage(db.Model):
     """DM feature"""
 
@@ -219,31 +242,7 @@ class DirectMessage(db.Model):
         default=datetime.utcnow(),
     )
 
-class DirectMessageExchange(db.Model):
-    """Track sender and sent-to info per direct message"""
-
-    __tablename__ = 'direct_message_exchanges'
-
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-    )
-
-    message = db.Column(db.Integer, db.ForeignKey('direct_messages.id', ondelete='CASCADE'), nullable=False)
-
-    message_info = db.relationship('DirectMessage', primaryjoin=(DirectMessage.id == message), backref='message_metadata', cascade="all")
-
-    sender_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
-        nullable=False,
-    )
-
-    sent_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
-        nullable=False
-    )   
+    message_info = db.relationship('DirectMessageExchange', primaryjoin=(id == DirectMessageExchange.message), backref='message_metadata', cascade="all")
 
 def connect_db(app):
     """Connect this database to provided Flask app.
