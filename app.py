@@ -98,6 +98,9 @@ def signup():
 @app.route('/login', methods=["GET", "POST"])
 def login():
     """Handle user login."""
+    # redirect if user is already logged in
+    if g.user:
+        return redirect(url_for('homepage'))
 
     form = LoginForm()
 
@@ -278,6 +281,13 @@ def messages_destroy(message_id):
     """Delete a message."""
 
     msg = Message.query.get(message_id)
+
+    # make sure logged-in user posted the message they're trying to delete
+
+    if msg.user_id != g.user.id:
+        flash("Access unauthorized")
+        return redirect('/')
+        
     db.session.delete(msg)
     db.session.commit()
 
@@ -305,6 +315,13 @@ def toggle_like(message_id):
     db.session.commit() 
     return redirect('/')
 
+@app.route('/users/message', methods=['POST'])
+@login_required(context='user_details')
+def send_direct_message():
+    """Send a direct message to a specific user"""
+    send_to = request.form.get('send_to')
+    form = MessageForm()
+    return render_template('/messages/new_direct_message.html', send_to=send_to, form=form)
 
 ##############################################################################
 # Homepage and error pages

@@ -7,9 +7,10 @@
 
 import os
 from unittest import TestCase
-from sqlalchemy import exc
+from psycopg2 import errors
 
 from models import db, User, Message, Follows
+import pdb
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -41,11 +42,15 @@ class UserModelTestCase(TestCase):
     def setUp(self):
         """Create test client, add sample data."""
 
-        User.query.delete()
-        Message.query.delete()
-        Follows.query.delete()
+        db.drop_all()
+        db.create_all()
 
         self.client = app.test_client()
+    
+    def tearDown(self):
+        resp = super().tearDown()
+        db.session.rollback()
+        return resp
 
     def test_user_model(self):
         """Does basic model work?"""
@@ -94,10 +99,13 @@ class UserModelTestCase(TestCase):
     def test_user_creation(self):
         """Test user creation class method"""
         User.signup('bobs_burgers', 'test@test.com', 'testing1!', '')
+        db.session.commit()
         new_user = User.query.filter_by(email='test@test.com').first()
         self.assertIsNotNone(new_user)
         try: 
             User.signup('dans_the_man', 'test@test.com', 'testing2', '')
-        except exc.SQLAlchemyError: 
+            db.session.commit()
+        #should throw a SQLAlchemy error for trying to insert a user with an existing primary key
+        except :
             new_user2 = User.query.filter_by(username='dans_the_man').first()
             self.assertEqual(None, new_user2)

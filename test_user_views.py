@@ -11,6 +11,7 @@ os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
 
 from app import app, CURR_USER_KEY
 app.config['WTF_CSRF_ENABLED'] = False
+app.config['PRESERVE_CONTEXT_ON_EXCEPTION'] = False
 
 db.create_all()
 
@@ -20,8 +21,8 @@ class UserViewTestCase(TestCase):
     def setUp(self):
         """Create test client, add sample data."""
 
-        User.query.delete()
-        Message.query.delete()
+        db.drop_all()
+        db.create_all()
 
         self.client = app.test_client()
 
@@ -31,6 +32,11 @@ class UserViewTestCase(TestCase):
                                     image_url=None)
 
         db.session.commit()
+    
+    def tearDown(self):
+        resp = super().tearDown()
+        db.session.rollback()
+        return resp
     
     def testSignUp(self):
         data = {
@@ -76,21 +82,9 @@ class UserViewTestCase(TestCase):
 
     def testSuccessfulLogout(self):
         """test for successful logout for logged-in user"""
-        data = {
-                    "username": "new_user",
-                    "password": "some_password",
-                    "email": "myemail@yahoo.com"
-                }
-        # first need to sign up
-        self.client.post('/signup', data=data, follow_redirects=True)
-        user = User.query.filter_by(username='new_user').first()
-        #then need to log in
-        self.client.post('/login', data={'username': user.username,'password': user.password}, follow_redirects=True)
-
-        #need to add signed-in user id to fake session
-        with self.client as c:
-            with c.session_transaction() as sess:
-                sess[CURR_USER_KEY] = user.id
+        self.user = self.signUpAndLogin()
+        with self.client.session_transaction() as sess:
+            sess[CURR_USER_KEY] = self.user.id
         
         #then finally can try to log out
         response = self.client.get('/logout', follow_redirects=True)
@@ -119,16 +113,15 @@ class UserViewTestCase(TestCase):
         response = self.client.get('/users/200')
         self.assertEqual(response.status_code, 404)
     
-    #TODO get this test to work - see about using g object with tests
-    # def testAddingFollowedUser(self):
-    #     """Test following a new user"""
+    def testAddingFollowedUser(self):
+        """Test following a new user"""
+        with self.client.session_transaction() as sess:
+            self.user = self.signUpAndLogin()
+            sess[CURR_USER_KEY] = self.user.id
+            response = self.client.post(f'/users/follow/{self.testuser.id}', follow_redirects=True)
 
-    #     self.user = self.signUpAndLogin()
-    #     response = self.client.post(f'/users/follow/{self.testuser.id}', follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
 
-    #     self.assertEqual(response.status_code, 200)
-
-    #TODO if this function works as expected, refactor some of the tests above
     def signUpAndLogin(self):
         data = {
                     "username": "new_user",
