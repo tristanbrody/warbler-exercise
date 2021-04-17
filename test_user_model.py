@@ -118,28 +118,25 @@ class UserModelTestCase(TestCase):
         # this should be unsuccessful and return False
         self.assertFalse(authentication_attempt)
 
-    # def testChangePassword(self):
-    #     """Test changing password with class method"""
+    def testChangePassword(self):
+        """Test changing password with class method"""
 
-    #     # first sign up as a new user
-    #     self.testuser = User.signup(
-    #         username="testuser",
-    #         email="test@test.com",
-    #         password="testuser",
-    #         image_url=None,
-    #     )
+        # first sign up as a new user
+        self.testuser = User.signup(
+            username="testuser",
+            email="test@test.com",
+            password="testuser",
+            image_url=None,
+        )
 
-    #     db.session.commit()
+        db.session.commit()
 
-    #     # now try to change password
+        # now try to change password
 
-    #     test_change_password = User.change_password(
-    #         self.testuser.username, self.testuser.password, "mynewpassword"
-    #     )
+        test_change_password = User.change_password(
+            self.testuser.username, "testuser", "mynewpassword"
+        )
 
-    #     # this should be successful and return the user
+        # this should be successful and return the user
 
-    #     self.assertEqual(self.testuser, test_change_password)
-
-
-# TODO fix this test
+        self.assertEqual(self.testuser, test_change_password)

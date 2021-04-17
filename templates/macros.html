@@ -1,0 +1,58 @@
+{% macro render_form(h2, form_id, form_type) %}
+
+{% if form_type != 'sign_up' %}
+<div class="row justify-content-md-center">
+    <div class="col-md-4">
+        <h2 class="join-message">{{h2}}</h2>
+        {% endif %}
+        <form method="POST" id="{{form_id}}">
+            {{ form.hidden_tag() }}
+
+            {% for field in form if field.widget.input_type != 'hidden' and field.name != 'password' %}
+            {% set field_id = field.name %}
+            {% for error in field.errors %}
+            <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+            {{ field(placeholder=field.label.text, class="form-control", value=g.user[field_id]) }}
+            {% endfor %}
+
+            {% if form_type == 'edit' %}
+            <p>To confirm changes, enter your password:</p>
+            {{ form.password(placeholder="Enter your password to confirm", class="form-control") }}
+            {% endif %}
+            {% if form.password %}
+            {% if form.password.errors %}
+            {% for error in form.password.errors %}
+            <span class="text-danger">
+                {{ error }}
+            </span>
+            {% endfor %}
+            {% endif %}
+            {% endif %}
+
+            {% if form_type == 'edit' %}
+            <div class="edit-btn-area">
+                <a href="/users/{{ g.user.id }}" class="btn btn-outline-secondary">Cancel</a>
+                <button class="btn btn-success">Edit this user!</button>
+            </div>
+            {% endif %}
+
+            {% if form_type == 'change_password' %}
+            <div class="edit-btn-area">
+                <button class="btn btn-success">Confirm change</button>
+            </div>
+
+            {% endif %}
+
+            {% if form_type == 'sign_up' %}
+
+            <button class="btn btn-primary btn-lg btn-block">Sign me up!</button>
+
+            {% endif %}
+
+        </form>
+        {% if form_type != 'sign_up' %}
+    </div>
+</div>
+{% endif %}
+{% endmacro %}

@@ -470,6 +470,7 @@ def add_header(req):
 
 @contextmanager
 def captured_templates(app):
+    """use to keep track of templates rendered for testing"""
     recorded = []
 
     def record(sender, template, context, **extra):
@@ -523,6 +524,7 @@ def check_for_existing_messages(sender_id, sent_id):
 
 
 def render_message_metadata(message):
+    """Dynamically render info about sender and sent_to when rendering message thread"""
     if message.sender.id == g.user.id:
         return f"from you to {message.sent_to.username}:"
     if message.sent_to.id == g.user.id:
