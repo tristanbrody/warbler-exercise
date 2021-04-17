@@ -7,22 +7,23 @@ from flask_sqlalchemy import SQLAlchemy
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
+import pdb
 
 
 class Follows(db.Model):
     """Connection of a follower <-> followed_user."""
 
-    __tablename__ = 'follows'
+    __tablename__ = "follows"
 
     user_being_followed_id = db.Column(
         db.Integer,
-        db.ForeignKey('users.id', ondelete="cascade"),
+        db.ForeignKey("users.id", ondelete="cascade"),
         primary_key=True,
     )
 
     user_following_id = db.Column(
         db.Integer,
-        db.ForeignKey('users.id', ondelete="cascade"),
+        db.ForeignKey("users.id", ondelete="cascade"),
         primary_key=True,
     )
 
@@ -30,29 +31,21 @@ class Follows(db.Model):
 class Likes(db.Model):
     """Mapping user likes to warbles."""
 
-    __tablename__ = 'likes' 
+    __tablename__ = "likes"
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True
-    )
+    id = db.Column(db.Integer, primary_key=True)
 
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='cascade')
-    )
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="cascade"))
 
     message_id = db.Column(
-        db.Integer,
-        db.ForeignKey('messages.id', ondelete='cascade'),
-        unique=True
+        db.Integer, db.ForeignKey("messages.id", ondelete="cascade"), unique=True
     )
 
 
 class User(db.Model):
     """User in the system."""
 
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id = db.Column(
         db.Integer,
@@ -76,10 +69,7 @@ class User(db.Model):
         default="/static/images/default-pic.png",
     )
 
-    header_image_url = db.Column(
-        db.Text,
-        default="/static/images/warbler-hero.jpg"
-    )
+    header_image_url = db.Column(db.Text, default="/static/images/warbler-hero.jpg")
 
     bio = db.Column(
         db.Text,
@@ -94,26 +84,23 @@ class User(db.Model):
         nullable=False,
     )
 
-    messages = db.relationship('Message')
+    messages = db.relationship("Message")
 
     followers = db.relationship(
         "User",
         secondary="follows",
         primaryjoin=(Follows.user_being_followed_id == id),
-        secondaryjoin=(Follows.user_following_id == id)
+        secondaryjoin=(Follows.user_following_id == id),
     )
 
     following = db.relationship(
         "User",
         secondary="follows",
         primaryjoin=(Follows.user_following_id == id),
-        secondaryjoin=(Follows.user_being_followed_id == id)
+        secondaryjoin=(Follows.user_being_followed_id == id),
     )
 
-    likes = db.relationship(
-        'Message',
-        secondary="likes"
-    )
+    likes = db.relationship("Message", secondary="likes")
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
@@ -137,7 +124,7 @@ class User(db.Model):
         Hashes password and adds user to system.
         """
 
-        hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
+        hashed_pwd = bcrypt.generate_password_hash(password).decode("UTF-8")
 
         user = User(
             username=username,
@@ -161,10 +148,27 @@ class User(db.Model):
         """
 
         user = cls.query.filter_by(username=username).first()
-
         if user:
             is_auth = bcrypt.check_password_hash(user.password, password)
             if is_auth:
+                return user
+
+        return False
+
+    @classmethod
+    def change_password(cls, username, current_password, new_password):
+        """Change password for an existing user
+
+        Return false if current password passed into function is incorrect. Otherwise
+        return the user
+        """
+
+        user = cls.query.filter_by(username=username).first()
+        if user:
+            correct_password = bcrypt.check_password_hash(
+                user.password, current_password
+            )
+            if correct_password:
                 return user
 
         return False
@@ -173,7 +177,7 @@ class User(db.Model):
 class Message(db.Model):
     """An individual message ("warble")."""
 
-    __tablename__ = 'messages'
+    __tablename__ = "messages"
 
     id = db.Column(
         db.Integer,
@@ -193,38 +197,17 @@ class Message(db.Model):
 
     user_id = db.Column(
         db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
+        db.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    user = db.relationship('User')
-class DirectMessageExchange(db.Model):
-    """Track sender and sent-to info per direct message"""
+    user = db.relationship("User")
 
-    __tablename__ = 'direct_message_exchanges'
 
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-    )
-
-    message = db.Column(db.Integer, db.ForeignKey('direct_messages.id', ondelete='CASCADE'), nullable=False)
-
-    sender_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
-        nullable=False,
-    )
-
-    sent_id = db.Column(
-        db.Integer,
-        db.ForeignKey('users.id', ondelete='CASCADE'),
-        nullable=False
-    )   
 class DirectMessage(db.Model):
     """DM feature"""
 
-    __tablename__ = 'direct_messages'
+    __tablename__ = "direct_messages"
 
     id = db.Column(
         db.Integer,
@@ -242,7 +225,59 @@ class DirectMessage(db.Model):
         default=datetime.utcnow(),
     )
 
-    message_info = db.relationship('DirectMessageExchange', primaryjoin=(id == DirectMessageExchange.message), backref='message_metadata', cascade="all")
+    direct_message_thread = db.Column(
+        db.Integer,
+        db.ForeignKey("direct_message_threads.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    sender_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    sent_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
+    sender = db.relationship(
+        "User",
+        primaryjoin=(sender_id == User.id),
+        cascade="all",
+    )
+
+    sent_to = db.relationship(
+        "User",
+        primaryjoin=(sent_id == User.id),
+        cascade="all",
+    )
+
+
+class DirectMessageThread(db.Model):
+    """Parent of direct message"""
+
+    __tablename__ = "direct_message_threads"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    messages = db.relationship(
+        "DirectMessage", primaryjoin=(id == DirectMessage.direct_message_thread)
+    )
+
+    user_1 = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    user_2 = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+
 
 def connect_db(app):
     """Connect this database to provided Flask app.

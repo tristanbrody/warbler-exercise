@@ -3,7 +3,7 @@
 
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <form method="POST">
+        <form method="POST" class="m-4">
             {{ form.csrf_token }}
             <div>
                 {{ form.text(placeholder="Start a conversation", class="form-control",
@@ -12,6 +12,17 @@
             <input type="text" style="display:none" name="send-to" value={{send_to.id}}>
             <button class="btn btn-outline-success btn-block">Message {{send_to.username}}</button>
         </form>
+        {% if existing_messages %}
+        {% for message in existing_messages %}
+        <a href="/users/{{message.sender.id}}"><img src="{{message.sender.image_url}}" style="height: 32px; width:32px;"
+                alt="{{message.sender.username}}'s profile pic"></a>
+        {{render_message_metadata(message)}}
+        <p style="display: inline;">{{message.text}}</p>
+        <p class="text-left">{{message.timestamp.strftime('%Y-%m-%d %H:%M') }}
+        </p>
+        <hr>
+        {% endfor %}
+        {% endif %}
     </div>
 </div>
 

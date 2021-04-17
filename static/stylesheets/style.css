@@ -269,6 +269,10 @@ nav + .container {
 	z-index: 1;
 }
 
+.list-group {
+	cursor: pointer;
+}
+
 #messages .list-group-item a:not(.message-link) {
 	position: relative;
 	z-index: 2;
@@ -545,4 +549,10 @@ p.card-bio {
 
 .thumbs-up-on {
 	background-color: green;
+}
+
+.btn:focus,
+.btn:active {
+	outline: none !important;
+	box-shadow: none;
 }

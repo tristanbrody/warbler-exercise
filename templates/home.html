@@ -39,22 +39,21 @@
   <div class="col-lg-6 col-md-8 col-sm-12">
     <ul class="list-group" id="messages">
       {% for msg in messages %}
-      <li class="list-group-item">
-        <a href="/messages/{{ msg.id  }}" class="message-link" />
-        <a href="/users/{{ msg.user.id }}">
+      <li class="list-group-item message" data-message-route="/messages/{{ msg.id  }}">
+        <a href="/users/{{ msg.user.id }}" data-user-page-route="/users/{{msg.user.id}}">
           <img src="{{ msg.user.image_url }}" alt="" class="timeline-image">
         </a>
-        <div class="message-area">
-          <a href="/users/{{ msg.user.id }}">@{{ msg.user.username }}</a>
+        <div class="message-area" data-message-route="/messages/{{ msg.id}}">
+          <a href="/users/{{ msg.user.id }}" class="at-sign">@{{ msg.user.username }}</a>
           <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
           <p>{{ msg.text }}</p>
         </div>
-        <form method="POST" action="/users/toggle_like/{{ msg.id }}" id="messages-form">
-          <button class="
+        <form class="message-like-form">
+          <button data-like-post-route="/users/toggle_like/{{ msg.id }}" class="
                 btn 
                 btn-sm
                 {{'thumbs-up-on' if msg.id in likes else 'btn-secondary'}}">
-            <i class="fa fa-thumbs-up "></i>
+            <i class="fa fa-thumbs-up" data-like-post-route="/users/toggle_like/{{ msg.id }}"></i>
           </button>
         </form>
       </li>
@@ -63,4 +62,5 @@
   </div>
 
 </div>
+<script src="../static/app.js"></script>
 {% endblock %}

@@ -17,7 +17,7 @@ import pdb
 # before we import our app, since that will have already
 # connected to the database
 
-os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
+os.environ["DATABASE_URL"] = "postgresql:///warbler-test"
 
 
 # Now we can import app
@@ -36,8 +36,8 @@ class UserModelTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        #runs before test suite begins
-        return ''
+        # runs before test suite begins
+        return ""
 
     def setUp(self):
         """Create test client, add sample data."""
@@ -46,7 +46,7 @@ class UserModelTestCase(TestCase):
         db.create_all()
 
         self.client = app.test_client()
-    
+
     def tearDown(self):
         resp = super().tearDown()
         db.session.rollback()
@@ -55,34 +55,26 @@ class UserModelTestCase(TestCase):
     def test_user_model(self):
         """Does basic model work?"""
 
-        u = User(
-            email="test@test.com",
-            username="testuser",
-            password="HASHED_PASSWORD"
-        )
+        u = User(email="test@test.com", username="testuser", password="HASHED_PASSWORD")
 
         db.session.add(u)
         db.session.commit()
 
         # test that __repr__ method on user works as expected
         u_repr = u.__repr__()
-        self.assertIn(f'User #{u.id}: {u.username}, {u.email}', u_repr)
+        self.assertIn(f"User #{u.id}: {u.username}, {u.email}", u_repr)
 
         # User should have no messages & no followers
         self.assertEqual(len(u.messages), 0)
         self.assertEqual(len(u.followers), 0)
-    
+
     def test_following_methods(self):
         """Do is_following and is_followed user methods work?"""
         user_1 = User(
-            email="test@test.com",
-            username="testuser",
-            password="HASHED_PASSWORD"
+            email="test@test.com", username="testuser", password="HASHED_PASSWORD"
         )
         user_2 = User(
-            email="test2@test.com",
-            username="testuser2",
-            password="HASHED_PASSWORD"
+            email="test2@test.com", username="testuser2", password="HASHED_PASSWORD"
         )
         db.session.add_all([user_1, user_2])
         db.session.commit()
@@ -96,18 +88,58 @@ class UserModelTestCase(TestCase):
         self.assertTrue(user_2.is_following(user_1))
         self.assertFalse(user_1.is_following(user_2))
 
-    # def test_user_creation(self):
-    #     """Test user creation class method"""
-    #     User.signup('bobs_burgers', 'test@test.com', 'testing1!', '')
+    def test_user_creation(self):
+        """Test user creation class method"""
+        User.signup("bobs_burgers", "test@test.com", "testing1!", "")
+        db.session.commit()
+        new_user = User.query.filter_by(email="test@test.com").first()
+        self.assertIsNotNone(new_user)
+
+    def testAuthenticate(self):
+        """Test authorized and unauthorized login with authenticate class method"""
+
+        # first sign up a new user
+        self.testuser = User.signup(
+            username="testuser",
+            email="test@test.com",
+            password="testuser",
+            image_url=None,
+        )
+
+        db.session.commit()
+
+        authentication_attempt = User.authenticate(self.testuser.username, "testuser")
+        # this should be successful and return the user
+        test = User.query.get(self.testuser.id)
+        self.assertEqual(authentication_attempt, self.testuser)
+        authentication_attempt = User.authenticate(
+            self.testuser.username, self.testuser.password + "x"
+        )
+        # this should be unsuccessful and return False
+        self.assertFalse(authentication_attempt)
+
+    # def testChangePassword(self):
+    #     """Test changing password with class method"""
+
+    #     # first sign up as a new user
+    #     self.testuser = User.signup(
+    #         username="testuser",
+    #         email="test@test.com",
+    #         password="testuser",
+    #         image_url=None,
+    #     )
+
     #     db.session.commit()
-    #     new_user = User.query.filter_by(email='test@test.com').first()
-    #     self.assertIsNotNone(new_user)
-    #     try: 
-    #         User.signup('dans_the_man', 'test@test.com', 'testing2', '')
-    #         db.session.commit()
-    #     #should throw a SQLAlchemy error for trying to insert a user with an existing primary key
-    #     except errors.lookup("23505"):
-    #         new_user2 = User.query.filter_by(username='dans_the_man').first()
-    #         self.assertEqual(None, new_user2)
-    
-    #TODO get this test to work or delete lol
+
+    #     # now try to change password
+
+    #     test_change_password = User.change_password(
+    #         self.testuser.username, self.testuser.password, "mynewpassword"
+    #     )
+
+    #     # this should be successful and return the user
+
+    #     self.assertEqual(self.testuser, test_change_password)
+
+
+# TODO fix this test

@@ -34,6 +34,9 @@
           <div class="ml-auto">
             {% if g.user.id == user.id %}
             <a href="/users/profile" class="btn btn-outline-secondary">Edit Profile</a>
+            <form action="/users/account" class="form-inline">
+              <button class="btn btn-outline-primary ml-2">Change Password</button>
+            </form>
             <form method="POST" action="/users/delete" class="form-inline">
               <button class="btn btn-outline-danger ml-2">Delete Profile</button>
             </form>
